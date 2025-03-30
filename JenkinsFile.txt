@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    environment {
+        IMAGE_NAME = "myapp"
+        IMAGE_TAG = "latest"
+        REGISTRY = "your-docker-registry"
+        KUBE_NAMESPACE = "default"
+    }
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/your-repo.git'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+        stage('Push Image to Registry') {
+            steps {
+                script {
+                    sh "docker login -u your-username -p your-password ${REGISTRY}"
+                    sh "docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+        stage('Deploy to Kubernetes via Argo CD') {
+            steps {
+                script {
+                    sh "kubectl apply -f k8s/deployment.yaml"
+                    sh "kubectl apply -f k8s/service.yaml"
+                }
+            }
+        }
+    }
+}
